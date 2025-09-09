@@ -1,0 +1,76 @@
+blueprint:
+  name: Generic actions by time window
+  description: Run user-defined actions inside a daily time window; optional actions outside.
+  domain: automation
+  author: Samuel Pietra
+  input:
+    begin_time:
+      name: Begin time
+      description: When the actions should start.
+      selector:
+        time: {}
+    end_time:
+      name: End time
+      description: When the actions should end.
+      selector:
+        time: {}
+    actions_inside:
+      name: Actions when inside time window
+      description: What to do when inside the window.
+      default: []
+      selector:
+        action: {}
+    actions_outside:
+      name: Actions when outside time window (optional)
+      description: What to do when outside the window.
+      default: []
+      selector:
+        action: {}
+
+trigger:
+  - platform: time
+    at: !input begin_time
+    id: begin
+  - platform: time
+    at: !input end_time
+    id: end
+  - platform: homeassistant
+    event: start
+    id: startup
+  - platform: event
+    event_type: automation_reloaded
+    id: reload
+
+variables:
+  begin: !input begin_time
+  end: !input end_time
+  now_date: '{{ now() }}'
+  begin_date: '{{ today_at(begin) }}'
+  end_date: '{{ today_at(end) }}'
+  in_window: >-
+    {% if begin_date <= end_date %} {# if same day #}
+      {{ begin_date <= now_date < end_date }}
+    {% else %}  {# if window crosses midnight #}
+      {{ now_date >= begin_date or now_date < end_date }}
+    {% endif %}
+
+action:
+  - choose:
+      # Sync on startup / reload
+      - conditions: "{{ trigger.id in ['startup','reload'] }}"
+        sequence:
+          - choose:
+              - conditions: '{{ in_window }}'
+                sequence: !input actions_inside
+              - conditions: '{{ not in_window }}'
+                sequence: !input actions_outside
+
+      # Boundaries
+      - conditions: "{{ trigger.id == 'begin' }}"
+        sequence: !input actions_inside
+
+      - conditions: "{{ trigger.id == 'end' }}"
+        sequence: !input actions_outside
+
+mode: single
+max_exceeded: silent
