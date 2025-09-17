@@ -1,0 +1,75 @@
+blueprint:
+  name: Remote commands — learn/delete
+  description: Learn or delete multiple IR/RF commands for a remote.* entity (Broadlink etc.).
+  domain: script
+  author: Samuel Pietra
+  input:
+    remote_entity:
+      name: Remote entity
+      selector:
+        entity:
+          domain: remote
+    operation:
+      name: Operation
+      description: Choose whether to learn or delete commands.
+      default: learn
+      selector:
+        select:
+          options:
+            - learn
+            - delete
+    command_type:
+      name: Command type (learn only)
+      default: ir
+      selector:
+        select:
+          options:
+            - ir
+            - rf
+    device_name:
+      name: Device name
+      description: Label under which commands are stored (e.g., "Bedroom TV").
+      selector:
+        text: {}
+    commands:
+      name: Commands (list)
+      description: YAML list of command names (e.g., power, mute, source).
+      selector:
+        object: {}
+    timeout:
+      name: Timeout per command (s, learn only)
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 120
+          unit_of_measurement: s
+          mode: slider
+
+variables:
+  op: !input operation
+
+sequence:
+  - choose:
+      - conditions: "{{ op == 'learn' }}"
+        sequence:
+          - service: remote.learn_command
+            target:
+              entity_id: !input remote_entity
+            data:
+              command_type: !input command_type
+              device: !input device_name
+              command: !input commands
+              timeout: !input timeout
+
+      - conditions: "{{ op == 'delete' }}"
+        sequence:
+          - service: remote.delete_command
+            target:
+              entity_id: !input remote_entity
+            data:
+              device: !input device_name
+              command: !input commands
+
+mode: single
+icon: mdi:remote
