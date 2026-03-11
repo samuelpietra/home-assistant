@@ -2,6 +2,7 @@ blueprint:
   name: Generic actions by vacancy
   description: Run user-defined actions after a condition (e.g., presence or motion) has been continuously `true` for a specified duration.
   domain: automation
+  author: Samuel Pietra
   input:
     condition_entity:
       name: Condition
