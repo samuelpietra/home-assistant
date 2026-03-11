@@ -1,0 +1,53 @@
+blueprint:
+  name: Generic actions by vacancy
+  description: Run user-defined actions after a condition (e.g., presence or motion) has been continuously `true` for a specified duration.
+  domain: automation
+  input:
+    condition_entity:
+      name: Condition
+      description: >
+        Binary sensor that represents the condition to be monitored.
+        It can be a presence sensor, motion sensor, or any auxiliary binary sensor
+        that combines multiple facts (e.g., "room empty").
+      selector:
+        entity:
+          domain: binary_sensor
+    condition_state:
+      name: Condition State
+      description: >
+        State of the binary sensor that is considered as true for the condition.
+        `"on"` or `"off"` depending on the sensor (e.g., for a motion sensor,
+        `"off"` means no motion).
+      default: "off"
+      selector:
+        select:
+          options:
+            - "on"
+            - "off"
+    duration:
+      name: Duration
+      description: >
+        Continuous time that the condition must remain `true`
+        before executing the actions.
+      default:
+        hours: 0
+        minutes: 30
+        seconds: 0
+      selector:
+        duration:
+    actions:
+      name: Actions
+      description: >
+        Actions to execute when the condition has been `true` for the specified duration.
+        It can be any action supported by Home Assistant
+        (turning off lights, activating scenes, sending notifications, etc).
+      selector:
+        action:
+
+trigger:
+  - platform: state
+    entity_id: !input condition_entity
+    to: !input condition_state
+    for: !input duration
+
+action: !input actions
